@@ -28,8 +28,13 @@ export class ClientService {
         return await this.clientRepository.delete(id);
     }
 
-    async countClients(): Promise<number> {
-        return await this.clientRepository.count();
+    public async countClients(): Promise<number> {
+        try {
+            return await this.clientRepository.count();
+        } catch (error) {
+            console.error('Error in countClients service:', error);
+            throw error;
+        }
     }
 
     async findClientsByName(name: string): Promise<IClient[]> {

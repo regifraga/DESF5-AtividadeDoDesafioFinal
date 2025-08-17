@@ -71,6 +71,7 @@ export class ClientController {
             const count = await this.clientService.countClients();
             res.json({ count });
         } catch (error) {
+            console.error('Error counting clients:', error);
             res.status(500).json({ error: 'Failed to count clients' });
         }
     };
