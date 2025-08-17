@@ -12,47 +12,43 @@ Exercitar os seguintes conceitos trabalhados nos Módulos:
 # Enunciado
 
 Você é Arquiteto(a) de Software em uma grande empresa de vendas on-line.
-Você é responsável por construir e implantar uma solução que disponibilize
-publicamente dados de Cliente/Produto/Pedido (algum domínio) aos
-parceiros da empresa.
+Você é responsável por construir e implantar uma solução que disponibilize dados de Cliente/Produto/Pedido (algum domínio) aos parceiros da empresa.
 
-Para isso, você vai Projetar, Documentar e Implantar uma API REST, no
-padrão arquitetural MVC, que exponha um endpoint capaz de realizar um
-CRUD dos dados (e um pouco mais).
+Para isso, você vai Projetar, Documentar e Implantar uma API REST, no padrão arquitetural MVC, que exponha um endpoint capaz de realizar um CRUD dos dados (e um pouco mais).
 
 # Executando
 
 ## Construir e iniciar os containers
-    ```
-    docker compose up -d
-    ```
+```bash
+docker compose up -d
+```
 
 ## Ver os logs
 
 ### Todos os logs
-    ```
-    docker compose logs -f
-    ```
+```bash
+docker compose logs -f
+```
 
 ### Apenas logs da API
-    ```
-    docker compose logs -f api
-    ```
+```bash
+docker compose logs -f api
+```
 
 ### Apenas logs do banco
-    ```
-    docker compose logs -f postgres
-    ```
+```bash
+docker compose logs -f postgres
+```
 
 ### Apenas logs do banco
-    ```
-    docker compose logs -f postgres
-    ```
+```bash
+docker compose logs -f postgres
+```
 
 ## Parar os containers
-    ```
-    docker compose down
-    ```
+```bash
+docker compose down
+```
 
 # Algumas observações importantes:
 
@@ -66,61 +62,61 @@ CRUD dos dados (e um pouco mais).
 # Para testar se está tudo funcionando:
 
 ## Iniciar os serviços
-    ```
-    docker compose up -d
-    ```
+```bash
+docker compose up -d
+```
 
 ## Verificar status
-    ```
-    docker compose ps
-    ```
+```bash
+docker compose ps
+```
 
 # Testar a API (em um terminal bash)
 
 ## Criar um cliente
-    ```
-    curl -X POST http://localhost:3000/api/clients \
-      -H "Content-Type: application/json" \
-      -d '{"name":"João Silva","email":"joao@email.com","phone":"11999999999","address":"Rua Exemplo, 123"}'
-    ```
+```bash
+curl -X POST http://localhost:3000/api/clients \
+    -H "Content-Type: application/json" \
+    -d '{"name":"João Silva","email":"joao@email.com","phone":"11999999999","address":"Rua Exemplo, 123"}'
+```
 
 ## Listar todos os clientes
-    ```
-    curl http://localhost:3000/api/clients
-    ```
+```bash
+curl http://localhost:3000/api/clients
+```
 
 ## Buscar cliente por ID
-    ```
-    curl http://localhost:3000/api/clients/1
-    ```
+```bash
+curl http://localhost:3000/api/clients/1
+```
 
 ## Buscar cliente por nome
-    ```
-    curl http://localhost:3000/api/clients/search\?name\=João
-    ```
+```bash
+curl http://localhost:3000/api/clients/search\?name\=João
+```
 
 ## Atualizar cliente
-    ```
-    curl -X PUT http://localhost:3000/api/clients/1 \
-      -H "Content-Type: application/json" \
-      -d '{"name":"João Silva Atualizado","email":"joao.novo@email.com"}'
-    ```
+```bash
+curl -X PUT http://localhost:3000/api/clients/1 \
+    -H "Content-Type: application/json" \
+    -d '{"name":"João Silva Atualizado","email":"joao.novo@email.com"}'
+```
 
 ## Deletar cliente
-    ```
-    curl -X DELETE http://localhost:3000/api/clients/1
-    ```
+```bash
+curl -X DELETE http://localhost:3000/api/clients/1
+```
 
 ## Contar total de clientes
-    ```
-    curl http://localhost:3000/api/clients/count
-    ```
+```bash
+curl http://localhost:3000/api/clients/count
+```
 
 ## Se precisar reconstruir a imagem da API após alterações no Dockerfile:
-    ```
-    docker compose build api
-    docker compose up -d
-    ```
+```bash
+docker compose build api
+docker compose up -d
+```
 
 > Com essa configuração, teremos tanto o banco de dados quanto a API rodando em containers Docker, com hot-reload para desenvolvimento e persistência de dados.
 
