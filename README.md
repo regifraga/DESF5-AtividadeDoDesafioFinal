@@ -120,6 +120,17 @@ docker compose up -d
 
 > Com essa configuração, teremos tanto o banco de dados quanto a API rodando em containers Docker, com hot-reload para desenvolvimento e persistência de dados.
 
+## Documentação da API
+A documentação completa da API está disponível através do Swagger UI em:
+```bash
+http://localhost:3000/api-docs
+```
+
+Para acessar:
+1. Inicie os containers: `docker compose up -d`
+2. Abra o navegador e acesse: http://localhost:3000/api-docs
+3. Explore e teste os endpoints diretamente pela interface do Swagger
+
 # Stack Tecnológica
 
 ## Backend
