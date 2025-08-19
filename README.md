@@ -188,3 +188,422 @@ src/
   └── utils/
       └── createTables.ts    # Utilitário de criação de tabelas
 ```
+
+# Arquitetura C4
+Usando **DSL** [link para o Structurizr](https://structurizr.com/dsl).
+
+## Nível 1 - Diagrama de Contexto
+
+```c4
+workspace {
+    model {
+        user = person "Cliente API" "Consumidor dos serviços da API"
+        
+        softwareSystem = softwareSystem "Sistema de Gerenciamento de Clientes" {
+            description "Sistema que fornece APIs RESTful para gerenciamento de clientes"
+            
+            apiApplication = container "API de Clientes" {
+                description "API REST que fornece funcionalidades de CRUD para clientes"
+                technology "Node.js, Express, TypeScript"
+            }
+            
+            database = container "Banco de Dados" {
+                description "Armazena informações dos clientes"
+                technology "PostgreSQL"
+            }
+        }
+
+        # Relacionamentos
+        user -> apiApplication "Faz requisições REST API" "HTTP/JSON"
+        apiApplication -> database "Lê e escreve" "SQL/TCP"
+    }
+
+    views {
+        systemContext softwareSystem "SystemContext" {
+            include *
+            autoLayout
+        }
+
+        styles {
+            element "Software System" {
+                background #1168bd
+                color #ffffff
+            }
+            element "Person" {
+                shape person
+                background #08427b
+                color #ffffff
+            }
+            element "Container" {
+                background #438dd5
+                color #ffffff
+            }
+        }
+    }
+}
+```
+
+### Elementos do Diagrama
+
+1. **Cliente API (Person)**
+   - Consumidor externo que interage com o sistema
+   - Faz requisições HTTP para gerenciar dados de clientes
+
+2. **Sistema de Gerenciamento de Clientes (Software System)**
+   - Sistema principal que gerencia todas as operações relacionadas a clientes
+   - Composto por API REST e banco de dados
+
+3. **API de Clientes (Container)**
+   - Aplicação Node.js com Express e TypeScript
+   - Implementa endpoints RESTful para CRUD de clientes
+   - Segue padrão arquitetural MVC
+
+4. **Banco de Dados (Container)**
+   - PostgreSQL para persistência dos dados
+   - Armazena informações dos clientes
+   - Gerenciado via Docker
+
+### Relacionamentos
+
+1. **Cliente API → API de Clientes**
+   - Protocolo: HTTP/JSON
+   - Operações CRUD via endpoints REST
+
+2. **API de Clientes → Banco de Dados**
+   - Protocolo: SQL/TCP
+   - Persistência e recuperação de dados
+
+## Nível 2 - Diagrama de Container
+
+```c4
+workspace {
+    model {
+        # Pessoas
+        user = person "Cliente API" "Consumidor dos serviços da API"
+
+        clientSystem = softwareSystem "Sistema de Gerenciamento de Clientes" {
+            # API Containers
+            webApi = container "API Express" {
+                description "Fornece funcionalidades de CRUD via JSON/HTTP"
+                technology "Node.js, Express, TypeScript"
+            }
+
+            clientController = container "Controller Layer" {
+                description "Manipula requisições HTTP e respostas"
+                technology "TypeScript, Express Router"
+            }
+
+            clientService = container "Service Layer" {
+                description "Implementa lógica de negócio"
+                technology "TypeScript"
+            }
+
+            clientRepository = container "Repository Layer" {
+                description "Gerencia acesso e persistência de dados"
+                technology "TypeScript, node-postgres"
+            }
+
+            # Database Container
+            databaseContainer = container "Database" {
+                description "Armazena e gerencia dados dos clientes"
+                technology "PostgreSQL 15"
+                tags "database"
+                
+                properties {
+                    "Schema" "clients"
+                    "Tables" "clients (id, name, email, phone, address, created_at, updated_at)"
+                    "Indexes" "PK_clients, IDX_clients_email, IDX_clients_name"
+                }
+            }
+        }
+
+        # Relacionamentos
+        user -> webApi "Faz requisições" "HTTP/JSON"
+        
+        # Fluxo interno
+        webApi -> clientController "Roteia requisições" "Express Router"
+        clientController -> clientService "Invoca" "TypeScript"
+        clientService -> clientRepository "Usa" "TypeScript"
+        clientRepository -> databaseContainer "Persiste dados" "SQL via node-postgres pool"
+    }
+
+    views {
+        container clientSystem "Containers" {
+            include *
+            autoLayout
+        }
+
+        styles {
+            element "Person" {
+                shape person
+                background #08427b
+                color #ffffff
+            }
+            element "Container" {
+                background #438dd5
+                color #ffffff
+            }
+            element "database" {
+                shape cylinder
+                background #438dd5
+                color #ffffff
+            }
+        }
+
+        themes default
+    }
+}
+```
+
+### Detalhamento do Container de Banco de Dados
+
+O container `Database` é responsável por:
+
+1. **Persistência**
+   - Armazenamento dos dados dos clientes
+   - Garantia de integridade referencial
+   - Gerenciamento de índices e constraints
+
+2. **Estrutura**
+   - Tabela `clients` com campos estruturados
+   - Triggers para atualização automática
+   - Índices para otimização de consultas
+
+3. **Comunicação**
+   - Conexão via pool de conexões
+   - Protocolo PostgreSQL nativo
+   - Porta 5432 exposta via Docker
+
+4. **Features**
+   - Transações ACID
+   - Índices automáticos e customizados
+   - Constraints de unicidade
+   - Timestamps automáticos
+
+
+## Diagramas de Sequência UML
+Usando **mermaid** [link para o Mermaid Chart](https://www.mermaidchart.com/play?utm_source=mermaid_live_editor&utm_medium=toggle).
+
+### Criar Cliente
+```mermaid
+sequenceDiagram
+    participant C as Cliente API
+    participant R as Router
+    participant CT as ClientController
+    participant S as ClientService
+    participant RP as ClientRepository
+    participant DB as PostgreSQL
+
+    C->>R: POST /api/clients
+    R->>CT: createClient(req, res)
+    CT->>S: createClient(clientData)
+    S->>RP: create(clientData)
+    RP->>DB: INSERT INTO clients
+    DB-->>RP: Client Record
+    RP-->>S: Client Object
+    S-->>CT: Client Object
+    CT-->>C: 201 Created + Client JSON
+```
+
+### Buscar Todos Clientes
+```mermaid
+sequenceDiagram
+    participant C as Cliente API
+    participant R as Router
+    participant CT as ClientController
+    participant S as ClientService
+    participant RP as ClientRepository
+    participant DB as PostgreSQL
+
+    C->>R: GET /api/clients
+    R->>CT: getAllClients(req, res)
+    CT->>S: getAllClients()
+    S->>RP: findAll()
+    RP->>DB: SELECT * FROM clients
+    DB-->>RP: Client Records[]
+    RP-->>S: Client Objects[]
+    S-->>CT: Client Objects[]
+    CT-->>C: 200 OK + Clients JSON
+```
+
+### Atualizar Cliente
+```mermaid
+sequenceDiagram
+    participant C as Cliente API
+    participant R as Router
+    participant CT as ClientController
+    participant S as ClientService
+    participant RP as ClientRepository
+    participant DB as PostgreSQL
+
+    C->>R: PUT /api/clients/:id
+    R->>CT: updateClient(req, res)
+    CT->>S: updateClient(id, clientData)
+    S->>RP: update(id, clientData)
+    RP->>DB: UPDATE clients SET ...
+    DB-->>RP: Updated Record
+    RP-->>S: Updated Object
+    S-->>CT: Updated Object
+    CT-->>C: 200 OK + Updated JSON
+```
+
+### Deletar Cliente
+```mermaid
+sequenceDiagram
+    participant C as Cliente API
+    participant R as Router
+    participant CT as ClientController
+    participant S as ClientService
+    participant RP as ClientRepository
+    participant DB as PostgreSQL
+
+    C->>R: DELETE /api/clients/:id
+    R->>CT: deleteClient(req, res)
+    CT->>S: deleteClient(id)
+    S->>RP: delete(id)
+    RP->>DB: DELETE FROM clients
+    DB-->>RP: Success/Failure
+    RP-->>S: boolean
+    S-->>CT: boolean
+    CT-->>C: 204 No Content
+```
+
+### Tratamento de Erro
+```mermaid
+sequenceDiagram
+    participant C as Cliente API
+    participant R as Router
+    participant CT as ClientController
+    participant S as ClientService
+    participant RP as ClientRepository
+    participant DB as PostgreSQL
+
+    C->>R: POST /api/clients
+    R->>CT: createClient(req, res)
+    CT->>S: createClient(clientData)
+    S->>RP: create(clientData)
+    RP->>DB: INSERT INTO clients
+    DB-->>RP: Error: Duplicate Email
+    RP-->>S: throws Error
+    S-->>CT: throws Error
+    CT-->>C: 400 Bad Request + Error Message
+```
+
+Estes diagramas mostram:
+1. O fluxo completo das requisições
+2. A interação entre as camadas
+3. Os tipos de retorno
+4. O tratamento de erros
+5. Os status HTTP retornados
+
+## Diagrama de Classes UML
+
+```mermaid
+classDiagram
+    class IClient {
+        <<interface>>
+        +id: number
+        +name: string
+        +email: string
+        +phone: string
+        +address?: string
+        +createdAt: Date
+        +updatedAt: Date
+    }
+
+    class IClientRepository {
+        <<interface>>
+        +create(client: Omit<IClient, 'id'>): Promise<IClient>
+        +findAll(): Promise<IClient[]>
+        +findById(id: number): Promise<IClient | null>
+        +findByName(name: string): Promise<IClient[]>
+        +update(id: number, client: Partial<IClient>): Promise<IClient | null>
+        +delete(id: number): Promise<boolean>
+        +count(): Promise<number>
+    }
+
+    class ClientRepository {
+        -pool: Pool
+        +create(client: Omit<IClient, 'id'>): Promise<IClient>
+        +findAll(): Promise<IClient[]>
+        +findById(id: number): Promise<IClient | null>
+        +findByName(name: string): Promise<IClient[]>
+        +update(id: number, client: Partial<IClient>): Promise<IClient | null>
+        +delete(id: number): Promise<boolean>
+        +count(): Promise<number>
+    }
+
+    class ClientService {
+        -clientRepository: IClientRepository
+        +constructor(clientRepository: IClientRepository)
+        +createClient(clientData: Omit<IClient, 'id'>): Promise<IClient>
+        +getAllClients(): Promise<IClient[]>
+        +getClientById(id: number): Promise<IClient | null>
+        +updateClient(id: number, clientData: Partial<IClient>): Promise<IClient | null>
+        +deleteClient(id: number): Promise<boolean>
+        +countClients(): Promise<number>
+        +findClientsByName(name: string): Promise<IClient[]>
+    }
+
+    class ClientController {
+        -clientService: ClientService
+        +constructor(clientService: ClientService)
+        +createClient(req: Request, res: Response): Promise<void>
+        +getAllClients(req: Request, res: Response): Promise<void>
+        +getClientById(req: Request, res: Response): Promise<void>
+        +updateClient(req: Request, res: Response): Promise<void>
+        +deleteClient(req: Request, res: Response): Promise<void>
+        +countClients(req: Request, res: Response): Promise<void>
+        +findClientsByName(req: Request, res: Response): Promise<void>
+    }
+
+    IClientRepository <|.. ClientRepository : implements
+    ClientRepository ..> IClient : uses
+    ClientService --> IClientRepository : depends
+    ClientService ..> IClient : uses
+    ClientController --> ClientService : depends
+    ClientController ..> IClient : uses
+```
+
+### Descrição das Classes
+
+1. **IClient**
+   - Interface que define a estrutura de um cliente
+   - Contém todas as propriedades necessárias
+   - Usada para tipagem em toda a aplicação
+
+2. **IClientRepository**
+   - Interface que define os métodos do repositório
+   - Define o contrato para acesso aos dados
+   - Permite diferentes implementações (PostgreSQL, MongoDB, etc.)
+
+3. **ClientRepository**
+   - Implementação concreta do IClientRepository
+   - Usa node-postgres para acesso ao banco
+   - Implementa todas as operações CRUD
+
+4. **ClientService**
+   - Contém a lógica de negócio
+   - Usa injeção de dependência do repositório
+   - Implementa validações e regras de negócio
+
+5. **ClientController**
+   - Manipula requisições HTTP
+   - Converte dados entre HTTP e domínio
+   - Gerencia respostas e códigos de status
+
+### Relacionamentos
+
+1. **Implementação**
+   - ClientRepository implementa IClientRepository
+   - Garante que todos os métodos necessários estão implementados
+
+2. **Dependência**
+   - ClientService depende de IClientRepository (inversão de dependência)
+   - ClientController depende de ClientService
+   - Todas as classes usam IClient para tipagem
+
+3. **Composição**
+   - ClientRepository possui uma instância de Pool (conexão DB)
+   - ClientService possui uma instância de IClientRepository
+   - ClientController possui uma instância de ClientService
